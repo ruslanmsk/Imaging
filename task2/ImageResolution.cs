@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing.Drawing2D;
-using System.Linq;
-using System.Text;
 using ImageReadCS.task1;
 
 namespace ImageReadCS.task2
@@ -14,10 +10,10 @@ namespace ImageReadCS.task2
             var width = (int)(image.Width * n);
             var height = (int)(image.Height * n);
             var result = new GrayscaleFloatImage(width, height);
-            for (var y = 0; y < height - (int)n; y++)
+            for (var y = 0; y < height; y++)
             {
                 var dy = y / n;
-                for (var x = 0; x < width - (int)n; x++)
+                for (var x = 0; x < width; x++)
                 {
                     var dx = x / n;
                     if ((dx % 1 == 0) && (dy % 1 == 0))
@@ -28,15 +24,17 @@ namespace ImageReadCS.task2
                     {
                         var x1 = (int)dx;
                         var y1 = (int)dy;
-                        result[x, y] = (float)((dy - y1) * ((x1 + 1 - dx) * image[x1, y1 + 1] + (dx - x1) * image[x1 + 1, y1 + 1]) +
-                                        (y1 + 1 - dy) * ((x1 + 1 - dx) * image[x1, y1] + (dx - x1) * image[x1 + 1, y1]));
+                        result[x, y] = (float)((dy - y1) * ((x1 + 1 - dx) * image[x1, y1 + 1 >= image.Height ? image.Height - 1 : y1 + 1] +
+                                                (dx - x1) * image[x1 + 1 >= image.Width ? image.Width -1 : x1+1, y1 + 1 >= image.Height ? image.Height - 1 : y1 + 1]) +
+                                                (y1 + 1 - dy) * ((x1 + 1 - dx) * image[x1, y1] +
+                                                (dx - x1) * image[x1 + 1 >= image.Width ? image.Width - 1 : x1 + 1, y1]));
                     }
                 }
             }
             return result;
         }
 
-        public static GrayscaleFloatImage DownSampleBilinear(GrayscaleFloatImage image, double n)
+        public static GrayscaleFloatImage DownBilinear(GrayscaleFloatImage image, double n)
         {
             var width = (int)(image.Width / n);
             var height = (int)(image.Height / n);
@@ -75,69 +73,121 @@ namespace ImageReadCS.task2
             return result;
         }
 
-        public static GrayscaleFloatImage UpSampleBicubic(GrayscaleFloatImage image, double n)
+        public static GrayscaleFloatImage Bicubic(GrayscaleFloatImage image, double n)
         {
-            var width = (int)(image.Width * n);
-            var height = (int)(image.Height * n);
-            var result = new GrayscaleFloatImage(width, height);
-            for (var y = 0; y < height - (int)n; y++)
+            var width = image.Width;
+            var height = image.Height;
+            var newWidth = (int)(width * n);
+            var newHeight = (int)(height * n);
+            var result = new GrayscaleFloatImage(newWidth, newHeight);
+            for (var i = 0; i < newHeight; i++)
             {
-                var dy = y / n;
-                for (var x = 0; x < width - (int)n; x++)
+                var src_y = (int)Math.Floor((float)(i) / newHeight * height);
+                var y = (float)(i) / newHeight * height - src_y;
+                for (var j = 0; j < newWidth; j++)
                 {
-                    var dx = x / n;
-                    if ((dx % 1 == 0) && (dy % 1 == 0))
-                    {
-                        result[x, y] = image[(int)dx, (int)dy];
-                    }
-                    else
-                    {
-                        var x1 = (int)dx;
-                        var y1 = (int)dy;
-                        if (x1 <= 0) x1 = 1;
-                        if (y1 <= 0) y1 = 1;
-                        if (x1 >= image.Width - 2) x1--;
-                        if (y1 >= image.Height - 2) y1--; //rewrite
-
-                        result[x, y] =
-                            (float)
-                                ((x1 - dx)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1)*(dy - y1 - 1)*(dy - y1 - 2)/36*
-                                 image[x1 - 1, y1 - 1] -
-                                 (x1 - dx + 1)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1)*(dy - y1 - 1)*(dy - y1 - 2)/12*
-                                 image[x1, y1 - 1] +
-                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 2)*(dy - y1)*(dy - y1 - 1)*(dy - y1 - 2)/12*
-                                 image[x1 + 1, y1 - 1] -
-                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 1)*(dy - y1)*(dy - y1 - 1)*(dy - y1 - 2)/36*
-                                 image[x1 + 2, y1 - 1] -
-                                 (x1 - dx)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1 - 1)*(dy - y1 - 2)/12*
-                                 image[x1 - 1, y1] +
-                                 (x1 - dx + 1)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1 - 1)*(dy - y1 - 2)/4*
-                                 image[x1, y1] -
-                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1 - 1)*(dy - y1 - 2)/4*
-                                 image[x1 + 1, y1] +
-                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 1)*(dy - y1 + 1)*(dy - y1 - 1)*(dy - y1 - 2)/12*
-                                 image[x1 + 2, y1] +
-                                 (x1 - dx)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 2)/12*
-                                 image[x1 - 1, y1 + 1] -
-                                 (x1 - dx + 1)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 2)/4*
-                                 image[x1, y1 + 1] +
-                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 2)/4*
-                                 image[x1 + 1, y1 + 1] -
-                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 1)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 2)/12*
-                                 image[x1 + 2, y1 + 1] -
-                                 (x1 - dx)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 1)/36*
-                                 image[x1 - 1, y1 + 2] +
-                                 (x1 - dx + 1)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1) * (dy - y1 - 1) / 12 *
-                                 image[x1, y1 + 2] -
-                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 1)/12*
-                                 image[x1 + 1, y1 + 2] +
-                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 1)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 1)/36*
-                                 image[x1 + 2, y1 + 2]);
-
-                    }
+                    var src_x = (int)Math.Floor((float)(j) / newWidth * width);
+                    var x = (float)(j) / newWidth * width - src_x;
+                    result[i, j] =
+                            image[src_y - 1 < 0 ? 0 : src_y - 1, src_x - 1 <= 0 ? 0 : src_x - 1]
+                            * x * (x - 1) * (x - 2) * y * (y - 1) * (y - 2) / 36 -
+                            image[src_y, src_x - 1 <= 0 ? 0 : src_x - 1]
+                            * (x + 1) * (x - 1) * (x - 2) * y * (y - 1) * (y - 2) / 12 +
+                            image[src_y + 1 >= width ? width - 1 : src_y + 1, src_x - 1 <= 0 ? 0 : src_x - 1]
+                            * (x + 1) * x * (x - 2) * y * (y - 1) * (y - 2) / 12 -
+                            image[src_y + 2 >= image.Width ? image.Width - 1 : src_y + 2, src_x - 1 <= 0 ? 0 : src_x - 1]
+                            * (x + 1) * x * (x - 1) * y * (y - 1) * (y - 2) / 36 -
+                            image[src_y - 1 < 0 ? 0 : src_y - 1, src_x]
+                            * x * (x - 1) * (x - 2) * (y + 1) * (y - 1) * (y - 2) / 12 +
+                            image[src_y, src_x]
+                            * (x + 1) * (x - 1) * (x - 2) * (y + 1) * (y - 1) * (y - 2) / 4 -
+                            image[src_y + 1 >= width ? width - 1 : src_y + 1, src_x]
+                            * (x + 1) * x * (x - 2) * (y + 1) * (y - 1) * (y - 2) / 4 +
+                            image[src_y + 2 >= image.Width ? image.Width - 1 : src_y, src_x]
+                            * (x + 1) * x * (x - 1) * (y + 1) * (y - 1) * (y - 2) / 12 +
+                            image[src_y - 1 < 0 ? 0 : src_y - 1, src_x + 1 >= height ? height - 1 : src_x + 1]
+                            * x * (x - 1) * (x - 2) * (y + 1) * y * (y - 2) / 12 -
+                            image[src_y, src_x + 1 >= height ? height - 1 : src_x + 1]
+                            * (x + 1) * (x - 1) * (x - 2) * (y + 1) * y * (y - 2) / 4 +
+                            image[src_y + 1 >= width ? width - 1 : src_y + 1, src_x + 1 >= height ? height - 1 : src_x + 1]
+                            * (x + 1) * x * (x - 2) * (y + 1) * y * (y - 2) / 4 -
+                            image[src_y + 2 >= image.Width ? image.Width - 1 : src_y + 2, src_x + 1 >= image.Height ? image.Height - 1 : src_x + 1]
+                            * (x + 1) * x * (x - 1) * (y + 1) * y * (y - 2) / 12 -
+                            image[src_y - 1 < 0 ? 0 : src_y - 1, src_x + 2 >= image.Height ? image.Height - 1 : src_x + 2]
+                            * x * (x - 1) * (x - 2) * (y + 1) * y * (y - 1) / 36 +
+                            image[src_y, src_x + 2 >= image.Height ? image.Height - 1 : src_x + 2]
+                            * (x + 1) * (x - 1) * (x - 2) * (y + 1) * y * (y - 1) / 12 -
+                            image[src_y + 1 >= image.Width ? image.Width - 1 : src_y + 1, src_x + 2 >= image.Height ? image.Height - 1 : src_x + 2]
+                            * (x + 1) * x * (x - 2) * (y + 1) * y * (y - 1) / 12 +
+                            image[src_y + 2 >= image.Width ? image.Width - 1 : src_y + 2, src_x + 2 >= image.Height ? image.Height - 1 : src_x + 2]
+                            * (x + 1) * x * (x - 1) * (y + 1) * y * (y - 1) / 36;
                 }
             }
             return result;
+
+
+
+            //var width = (int)(image.Width * n);
+            //var height = (int)(image.Height * n);
+            //var result = new GrayscaleFloatImage(width, height);
+            //for (var y = 0; y < height - (int)n; y++)
+            //{
+            //    var dy = y / n;
+            //    for (var x = 0; x < width - (int)n; x++)
+            //    {
+            //        var dx = x / n;
+            //        if ((dx % 1 == 0) && (dy % 1 == 0))
+            //        {
+            //            result[x, y] = image[(int)dx, (int)dy];
+            //        }
+            //        else
+            //        {
+            //            var x1 = (int)dx;
+            //            var y1 = (int)dy;
+            //            //if (x1 <= 0) x1 = 1;
+            //            //if (y1 <= 0) y1 = 1;
+            //            //if (x1 >= image.Width - 2) x1--;
+            //            //if (y1 >= image.Height - 2) y1--; //rewriteв
+
+            //            result[x, y] =
+            //                (float)
+            //                    ((x1 - dx) * (x1 - dx - 1) * (x1 - dx - 2) * (dy - y1) * (dy - y1 - 1) * (dy - y1 - 2) / 36 *
+            //                     image[x1 - 1 < 0 ? 0 : x1 - 1, y1 - 1 < 0 ? 0 : y1 - 1] -
+            //                     (x1 - dx + 1) * (x1 - dx - 1) * (x1 - dx - 2) * (dy - y1) * (dy - y1 - 1) * (dy - y1 - 2) / 12 *
+            //                     image[x1, y1 - 1 < 0 ? 0 : y1 - 1] +
+            //                     (x1 - dx + 1) * (x1 - dx) * (x1 - dx - 2) * (dy - y1) * (dy - y1 - 1) * (dy - y1 - 2) / 12 *
+            //                     image[x1 + 1 >= image.Width ? image.Width - 1 : x1 + 1, y1 - 1 < 0 ? 0 : y1 - 1] -
+            //                     (x1 - dx + 1) * (x1 - dx) * (x1 - dx - 1) * (dy - y1) * (dy - y1 - 1) * (dy - y1 - 2) / 36 *
+            //                     image[x1 + 2 >= image.Width ? image.Width - 1 : x1 + 2, y1 - 1 < 0 ? 0 : y1 - 1] -
+            //                     (x1 - dx) * (x1 - dx - 1) * (x1 - dx - 2) * (dy - y1 + 1) * (dy - y1 - 1) * (dy - y1 - 2) / 12 *
+            //                     image[x1 - 1 < 0 ? 0 : x1 - 1, y1] +
+            //                     (x1 - dx + 1) * (x1 - dx - 1) * (x1 - dx - 2) * (dy - y1 + 1) * (dy - y1 - 1) * (dy - y1 - 2) / 4 *
+            //                     image[x1, y1] -
+            //                     (x1 - dx + 1) * (x1 - dx) * (x1 - dx - 2) * (dy - y1 + 1) * (dy - y1 - 1) * (dy - y1 - 2) / 4 *
+            //                     image[x1 + 1 >= image.Width ? image.Width - 1 : x1 + 1, y1] +
+            //                     (x1 - dx + 1) * (x1 - dx) * (x1 - dx - 1) * (dy - y1 + 1) * (dy - y1 - 1) * (dy - y1 - 2) / 12 *
+            //                     image[x1 + 2 >= image.Width ? image.Width - 1 : x1 + 2, y1] +
+            //                     (x1 - dx) * (x1 - dx - 1) * (x1 - dx - 2) * (dy - y1 + 1) * (dy - y1) * (dy - y1 - 2) / 12 *
+            //                     image[x1 - 1 < 0 ? 0 : x1 - 1, y1 + 1 >= image.Height ? image.Height - 1 : y1 + 1] -
+            //                     (x1 - dx + 1) * (x1 - dx - 1) * (x1 - dx - 2) * (dy - y1 + 1) * (dy - y1) * (dy - y1 - 2) / 4 *
+            //                     image[x1, y1 + 1 >= image.Height ? image.Height - 1 : y1 + 1] +
+            //                     (x1 - dx + 1) * (x1 - dx) * (x1 - dx - 2) * (dy - y1 + 1) * (dy - y1) * (dy - y1 - 2) / 4 *
+            //                     image[x1 + 1 >= image.Width ? image.Width - 1 : x1 + 1, y1 + 1 >= image.Height ? image.Height - 1 : y1 + 1] -
+            //                     (x1 - dx + 1) * (x1 - dx) * (x1 - dx - 1) * (dy - y1 + 1) * (dy - y1) * (dy - y1 - 2) / 12 *
+            //                     image[x1 + 2 >= image.Width ? image.Width - 1 : x1 + 2, y1 + 1 >= image.Height ? image.Height - 1 : y1 + 1] -
+            //                     (x1 - dx) * (x1 - dx - 1) * (x1 - dx - 2) * (dy - y1 + 1) * (dy - y1) * (dy - y1 - 1) / 36 *
+            //                     image[x1 - 1 < 0 ? 0 : x1 - 1, y1 + 2 >= image.Height ? image.Height - 1 : y1 + 2] +
+            //                     (x1 - dx + 1) * (x1 - dx - 1) * (x1 - dx - 2) * (dy - y1 + 1) * (dy - y1) * (dy - y1 - 1) / 12 *
+            //                     image[x1, y1 + 2 >= image.Height ? image.Height - 1 : y1 + 2] -
+            //                     (x1 - dx + 1) * (x1 - dx) * (x1 - dx - 2) * (dy - y1 + 1) * (dy - y1) * (dy - y1 - 1) / 12 *
+            //                     image[x1 + 1 >= image.Width ? image.Width - 1 : x1 + 1, y1 + 2 >= image.Height ? image.Height - 1 : y1 + 2] +
+            //                     (x1 - dx + 1) * (x1 - dx) * (x1 - dx - 1) * (dy - y1 + 1) * (dy - y1) * (dy - y1 - 1) / 36 *
+            //                     image[x1 + 2 >= image.Width ? image.Width - 1 : x1 + 2, y1 + 2 >= image.Height ? image.Height - 1 : y1 + 2]);
+
+            //        }
+            //    }
+            //}
+            //return result;
         }
 
         public static

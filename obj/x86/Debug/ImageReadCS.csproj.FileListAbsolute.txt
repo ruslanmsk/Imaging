@@ -1,0 +1,5 @@
+C:\Users\GlamurGirl\Source\Repos\Imaging\bin\Debug\ImageReadCS.exe
+C:\Users\GlamurGirl\Source\Repos\Imaging\bin\Debug\ImageReadCS.pdb
+C:\Users\GlamurGirl\Source\Repos\Imaging\obj\x86\Debug\ImageReadCS.csprojResolveAssemblyReference.cache
+C:\Users\GlamurGirl\Source\Repos\Imaging\obj\x86\Debug\ImageReadCS.exe
+C:\Users\GlamurGirl\Source\Repos\Imaging\obj\x86\Debug\ImageReadCS.pdb

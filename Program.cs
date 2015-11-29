@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using ImageReadCS.task1;
 using ImageReadCS.task2;
 
 namespace ImageReadCS
@@ -12,7 +11,7 @@ namespace ImageReadCS
             //var readLine = Console.ReadLine();
             //if (readLine == null) return;
             //var args = readLine.Split(' ');
-            var args = new[] { "baboon.bmp", "test.bmp", "up_bicubic", "2" };
+            var args = new[] { "boats.bmp", "new.bmp", "up_bicubic", "2" };
 
             if (args.Length == 4 && args[2] == "up_bilinear")
             {
@@ -31,7 +30,7 @@ namespace ImageReadCS
                     return;
                 var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
 
-                var resultImage = ImageResolution.UpSampleBicubic(image, Convert.ToDouble(args[3]));
+                var resultImage = ImageResolution.Bicubic(image, Convert.ToDouble(args[3]));
                 ImageIO.ImageToFile(resultImage, outputFileName);
             }
             if (args.Length == 4 && args[2] == "downsample")
@@ -41,7 +40,7 @@ namespace ImageReadCS
                     return;
                 var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
 
-                image = ImageResolution.DownSampleBilinear(image, Convert.ToDouble(args[3]));
+                image = ImageResolution.DownBilinear(image, Convert.ToDouble(args[3]));
                 ImageIO.ImageToFile(image, outputFileName);
             }
             if (args.Length == 4 && args[2] == "metric")
