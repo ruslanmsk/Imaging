@@ -41,7 +41,6 @@ namespace ImageReadCS.task2
             var width = (int)(image.Width / n);
             var height = (int)(image.Height / n);
             var result = new GrayscaleFloatImage(width, height);
-            double dx, dy;
             var sigma = Math.Sqrt(n * n - 1);
             var data = new double[image.rawdata.Length];
             var template = new double[image.rawdata.Length];
@@ -54,13 +53,13 @@ namespace ImageReadCS.task2
             {
                 image.rawdata[i] = Convert.ToSingle(data[i]);
             }
-            for (var y = 0; y < height - (int)n; y++)
+            for (var y = 0; y < height; y++)
             {
-                dy = y * n;
-                for (var x = 0; x < width - (int)n; x++)
+                var dy = y * n;
+                for (var x = 0; x < width; x++)
                 {
-                    dx = x * n;
-                    if ((dx % 1 == 0) && (dy % 1 == 0))
+                    var dx = x * n;
+                    if ((dx % 1 == 0) || (dy % 1 == 0))
                     {
                         result[x, y] = image[(int)dx, (int)dy];
                     }
@@ -78,106 +77,71 @@ namespace ImageReadCS.task2
 
         public static GrayscaleFloatImage UpSampleBicubic(GrayscaleFloatImage image, double n)
         {
-            var oldWidth = image.Width;
-            var oldHeight = image.Height;
-            var oldImage = new GrayscaleFloatImage(oldWidth, oldHeight);
-            //Экстраполируем и перевернем массив для удобства
-            //Линейно экстраполируем крайние строки и столбцы, для того чтобы можно было интерполировать крайние квадраты
-            //В случае заполнения нулями - граница будет выглядеть слишком грубо
-            //
-            for (var i = 0; i < oldWidth; i++)
-            {
-                for (var j = 0; j < oldHeight; j++)
-                {
-                    oldImage[i, j] = image[j, i];
-                    //экстраполируем влево
-                    if (i == 0)
-                        oldImage[0, j] = image[j, i] - image[j, i + 1];
-                    //эксраполируем вправо
-                    if (i == (oldWidth - 1))
-                        oldImage[oldWidth - 1, j] = image[j, i] - image[j, i - 1];
-                    //экстраполируем вверх
-                    if (j == 0)
-                        oldImage[i, 0] = image[j, i] - image[j + 1, i];
-                    //экстраполируем вниз
-                    if (j == (oldHeight - 1))
-                        oldImage[i, oldHeight - 1] = image[j, i] - image[j - 1, i];
-                }
-            }
-
-            //экстраполяция углов
-            oldImage[0, 0] = (oldImage[0, 1] + oldImage[1, 0]) / 2;
-            oldImage[oldWidth - 1, 0] = (oldImage[oldWidth - 1, 1] + oldImage[oldWidth - 2, 0]) / 2;
-            oldImage[0, oldHeight - 1] = (oldImage[1, oldHeight - 1] + oldImage[0, oldHeight - 2]) / 2;
-            oldImage[oldWidth - 1, oldHeight - 1] = (oldImage[oldWidth - 1, oldHeight - 2] + oldImage[oldWidth - 2, oldHeight - 1]) / 2;
-
-            //шаг сетки n
-            //создаем результирующее изображение
             var width = (int)(image.Width * n);
             var height = (int)(image.Height * n);
             var result = new GrayscaleFloatImage(width, height);
-
-            var b2I = new CachedBicubicInterpolator();
-            //обход старой сетки
-            for (var i = 1; i < oldWidth -2 ; i++)
+            for (var y = 0; y < height - (int)n; y++)
             {
-                for (var j = 1; j < oldHeight - 2; j++)
+                var dy = y / n;
+                for (var x = 0; x < width - (int)n; x++)
                 {
-                    var points = new List<List<double>>
+                    var dx = x / n;
+                    if ((dx % 1 == 0) && (dy % 1 == 0))
                     {
-                        new List<double>(4),
-                        new List<double>(4),
-                        new List<double>(4),
-                        new List<double>(4)
-                    };
-                    //
-                    points[0].Add(oldImage[i - 1, j - 1]); 
-                    points[0].Add(oldImage[i, j - 1]);
-                    points[0].Add(oldImage[i + 1, j - 1]);
-                    points[0].Add(oldImage[i + 2, j - 1]);
-                    // 
-                    points[1].Add(oldImage[i - 1, j]);
-                    points[1].Add(oldImage[i, j]);
-                    points[1].Add(oldImage[i + 1, j]);
-                    points[1].Add(oldImage[i + 2, j]);
-                    //
-                    points[2].Add(oldImage[i - 1, j + 1]);
-                    points[2].Add(oldImage[i, j + 1]);
-                    points[2].Add(oldImage[i + 1, j + 1]);
-                    points[2].Add(oldImage[i + 2, j + 1]);
-                    //
-                    points[3].Add(oldImage[i - 1, j + 2]);
-                    points[3].Add(oldImage[i, j + 2]);
-                    points[3].Add(oldImage[i + 1, j + 2]);
-                    points[3].Add(oldImage[i + 2, j + 2]);
-                    //
-                    b2I.UpdateCoefficients(points);
-                    //обход результирующего обращения
-                    for (var x = 0; x < n; x++)
+                        result[x, y] = image[(int)dx, (int)dy];
+                    }
+                    else
                     {
-                        for (var y = 0; y < n; y++)
-                        {
-                            //х пикселя на выходном изображении
-                            var rx = (i - 1) * n + x;
-                            //y пикселя на выходном изображении
-                            var ry = (j - 1) * n + y;
+                        var x1 = (int)dx;
+                        var y1 = (int)dy;
+                        if (x1 <= 0) x1 = 1;
+                        if (y1 <= 0) y1 = 1;
+                        if (x1 >= image.Width - 2) x1--;
+                        if (y1 >= image.Height - 2) y1--; //rewrite
 
-                            //x - x0
-                            var ax = x / n;
-                            //y - y0
-                            var ay = y / n;
-                            //Получим значение
-                            var value = b2I.GetValue(ax, ay);
-                            //Записываем значение
-                            result[(int) rx, (int) ry] = (float)value;
-                        }
+                        result[x, y] =
+                            (float)
+                                ((x1 - dx)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1)*(dy - y1 - 1)*(dy - y1 - 2)/36*
+                                 image[x1 - 1, y1 - 1] -
+                                 (x1 - dx + 1)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1)*(dy - y1 - 1)*(dy - y1 - 2)/12*
+                                 image[x1, y1 - 1] +
+                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 2)*(dy - y1)*(dy - y1 - 1)*(dy - y1 - 2)/12*
+                                 image[x1 + 1, y1 - 1] -
+                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 1)*(dy - y1)*(dy - y1 - 1)*(dy - y1 - 2)/36*
+                                 image[x1 + 2, y1 - 1] -
+                                 (x1 - dx)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1 - 1)*(dy - y1 - 2)/12*
+                                 image[x1 - 1, y1] +
+                                 (x1 - dx + 1)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1 - 1)*(dy - y1 - 2)/4*
+                                 image[x1, y1] -
+                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1 - 1)*(dy - y1 - 2)/4*
+                                 image[x1 + 1, y1] +
+                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 1)*(dy - y1 + 1)*(dy - y1 - 1)*(dy - y1 - 2)/12*
+                                 image[x1 + 2, y1] +
+                                 (x1 - dx)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 2)/12*
+                                 image[x1 - 1, y1 + 1] -
+                                 (x1 - dx + 1)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 2)/4*
+                                 image[x1, y1 + 1] +
+                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 2)/4*
+                                 image[x1 + 1, y1 + 1] -
+                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 1)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 2)/12*
+                                 image[x1 + 2, y1 + 1] -
+                                 (x1 - dx)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 1)/36*
+                                 image[x1 - 1, y1 + 2] +
+                                 (x1 - dx + 1)*(x1 - dx - 1)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1) * (dy - y1 - 1) / 12 *
+                                 image[x1, y1 + 2] -
+                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 2)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 1)/12*
+                                 image[x1 + 1, y1 + 2] +
+                                 (x1 - dx + 1)*(x1 - dx)*(x1 - dx - 1)*(dy - y1 + 1)*(dy - y1)*(dy - y1 - 1)/36*
+                                 image[x1 + 2, y1 + 2]);
+
                     }
                 }
             }
             return result;
         }
 
-        public static double[,] Transpose(double[,] matrix, int row, int column)
+        public static
+            double[,] Transpose(double[,] matrix, int row, int column)
         {
             if (matrix == null) throw new ArgumentNullException(nameof(matrix));
             var result = new double[column, row];

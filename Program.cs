@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using ImageReadCS.task1;
 using ImageReadCS.task2;
@@ -11,10 +9,11 @@ namespace ImageReadCS
     {
         static void Main()
         {
-            var readLine = Console.ReadLine();
-            if (readLine == null) return;
-            var args = readLine.Split(' ');
-            
+            //var readLine = Console.ReadLine();
+            //if (readLine == null) return;
+            //var args = readLine.Split(' ');
+            var args = new[] { "baboon.bmp", "test.bmp", "up_bicubic", "2" };
+
             if (args.Length == 4 && args[2] == "up_bilinear")
             {
                 string inputFileName = args[0], outputFileName = args[1];
@@ -33,7 +32,6 @@ namespace ImageReadCS
                 var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
 
                 var resultImage = ImageResolution.UpSampleBicubic(image, Convert.ToDouble(args[3]));
-                resultImage = Rotate.ClockWiseRotate(resultImage, 90);
                 ImageIO.ImageToFile(resultImage, outputFileName);
             }
             if (args.Length == 4 && args[2] == "downsample")
