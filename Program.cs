@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using ImageReadCS.task1;
 using ImageReadCS.task2;
 
 namespace ImageReadCS
@@ -11,7 +12,104 @@ namespace ImageReadCS
             var readLine = Console.ReadLine();
             if (readLine == null) return;
             var args = readLine.Split(' ');
-
+            //task1
+            //Инверсия значений пикселей изображения
+            if (args.Length == 3 && args[2] == "invert")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                Inversion.InversionProcess(image);
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //Отражение изображения по вертикали и по горизонтали
+            if (args.Length == 4 && args[2] == "mirror")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                if (args[3] == "x") Reflection.FlipHorizontal(image);
+                if (args[3] == "y") Reflection.FlipVertical(image);
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //Поворот изображений по и против часовой стрелки на 90, 180 и 270 градусов
+            if (args.Length == 5 && args[2] == "rotate")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                if (args[3] == "cw") image = Rotate.ClockWiseRotate(image, angle: int.Parse(args[4]));
+                if (args[3] == "ccw") image = Rotate.CounterClockWiseRotate(image, angle: int.Parse(args[4]));
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //фильтр Превитта
+            if (args.Length == 4 && args[2] == "prewitt")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                if (args[3] == "x") image = MedianFiltering.Convolution(image, Filters.PrewittHorizontal(), 3, 2);
+                if (args[3] == "y") image = MedianFiltering.Convolution(image, Filters.PrewittVertical(), 3, 2);
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //фильтр Собеля
+            if (args.Length == 4 && args[2] == "sobel")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                if (args[3] == "x") image = MedianFiltering.Convolution(image, Filters.SobelHorizontal(), 3);
+                if (args[3] == "y") image = MedianFiltering.Convolution(image, Filters.SobelVertical(), 3);
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //фильтр Робертса
+            if (args.Length == 4 && args[2] == "roberts")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                if (args[3] == "1") image = MedianFiltering.Convolution(image, Filters.RobertsMainDiag(), 2, 2);
+                if (args[3] == "2") image = MedianFiltering.Convolution(image, Filters.RobertsAdditionalDiag(), 2, 2);
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //Медианная фильтрация с квадратным окном произвольного размера
+            if (args.Length == 4 && args[2] == "median")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                image = MedianFiltering.MedianFilter(image, kernelSize: int.Parse(args[3]));
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //Свёртка с фильтром Гаусса с произвольным выбором параметра — радиуса σ
+            if (args.Length == 4 && args[2] == "gauss")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                var data = new double[image.rawdata.Length];
+                var template = new double[image.rawdata.Length];
+                for (var i = 0; i < image.rawdata.Length; i++)
+                {
+                    data[i] = Convert.ToDouble(image.rawdata[i]);
+                }
+                ConvolutionGauss.GaussProcess(data, image.Width, image.Height, sigma: double.Parse(args[3]), windowSize: 9, temp: template, dest: data);
+                for (var i = 0; i < image.rawdata.Length; i++)
+                {
+                    image.rawdata[i] = Convert.ToSingle(data[i]);
+                }
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //task2
+            //Увеличение изображений в вещественное число раз с помощью билинейной интерполяции
             if (args.Length == 4 && args[2] == "up_bilinear")
             {
                 string inputFileName = args[0], outputFileName = args[1];
@@ -22,6 +120,7 @@ namespace ImageReadCS
                 image = ImageResolution.Bilinear(image, Convert.ToDouble(args[3]));
                 ImageIO.ImageToFile(image, outputFileName);
             }
+            //Увеличение изображений в вещественное число раз с помощью бикубической интерполяции
             if (args.Length == 4 && args[2] == "up_bicubic")
             {
                 string inputFileName = args[0], outputFileName = args[1];
@@ -32,6 +131,7 @@ namespace ImageReadCS
                 var resultImage = ImageResolution.Bicubic(image, Convert.ToDouble(args[3]));
                 ImageIO.ImageToFile(resultImage, outputFileName);
             }
+            //Понижение разрешения изображений в вещественное число раз
             if (args.Length == 4 && args[2] == "downsample")
             {
                 string inputFileName = args[0], outputFileName = args[1];
@@ -42,6 +142,7 @@ namespace ImageReadCS
                 image = ImageResolution.DownBilinear(image, Convert.ToDouble(args[3]));
                 ImageIO.ImageToFile(image, outputFileName);
             }
+            //Вычисление метрик сравнения изображений(MSE и PSNR, SSIM и MSSIM)
             if (args.Length == 4 && args[2] == "metric")
             {
                 string inputFileName = args[0], inputFileName2 = args[1];
