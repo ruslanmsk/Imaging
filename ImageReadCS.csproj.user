@@ -4,6 +4,6 @@
     <StartArguments>"E:\Images\Std2\lenargb.bmp" "E:\1.png"</StartArguments>
   </PropertyGroup>
   <PropertyGroup>
-    <ProjectView>ShowAllFiles</ProjectView>
+    <ProjectView>ProjectFiles</ProjectView>
   </PropertyGroup>
 </Project>

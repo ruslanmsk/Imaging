@@ -60,7 +60,6 @@
     <Compile Include="task1\MedianFiltering.cs" />
     <Compile Include="task1\Reflection.cs" />
     <Compile Include="task1\Rotate.cs" />
-    <Compile Include="task2\CachedBicubicInterpolator.cs" />
     <Compile Include="task2\ImageResolution.cs" />
     <Compile Include="task2\Metrics.cs" />
   </ItemGroup>

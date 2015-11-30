@@ -11,7 +11,7 @@ namespace ImageReadCS
             //var readLine = Console.ReadLine();
             //if (readLine == null) return;
             //var args = readLine.Split(' ');
-            var args = new[] { "boats.bmp", "new.bmp", "up_bicubic", "2" };
+            var args = new[] { "baboon.bmp", "test.bmp", "up_bicubic", "3,3" };
 
             if (args.Length == 4 && args[2] == "up_bilinear")
             {
