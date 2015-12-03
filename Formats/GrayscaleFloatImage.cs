@@ -9,7 +9,7 @@ namespace ImageReadCS
     {
         public int Width { get; private set; }
         public int Height { get; private set; }
-        public readonly float[] rawdata;
+        public float[] rawdata;//readonly
 
         public GrayscaleFloatImage(int Width, int Height)
         {

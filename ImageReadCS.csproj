@@ -62,6 +62,7 @@
     <Compile Include="task1\Rotate.cs" />
     <Compile Include="task2\ImageResolution.cs" />
     <Compile Include="task2\Metrics.cs" />
+    <Compile Include="task3\Bilateral.cs" />
     <Compile Include="task3\Canny.cs" />
     <Compile Include="task3\Harris.cs" />
   </ItemGroup>

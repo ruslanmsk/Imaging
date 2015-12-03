@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using System.IO;
 using ImageReadCS.task1;
 using ImageReadCS.task2;
@@ -14,7 +13,7 @@ namespace ImageReadCS
             //var readLine = Console.ReadLine();
             //if (readLine == null) return;
             //var args = readLine.Split(' ');
-            var args = new[] {"cameraman.bmp", "cameraman5.bmp", "harris", "2"};
+            var args = new[] {"baboon.bmp", "test2.bmp", "bilateral", "2", "7"};
             //task1
             //Инверсия значений пикселей изображения
             if (args.Length == 3 && args[2] == "invert")
@@ -229,7 +228,18 @@ namespace ImageReadCS
                     return;
                 var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
 
-                image = Harris.Process(image, Convert.ToDouble(args[3]));
+                image = Harris.Process(image, double.Parse(args[3]));
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //Билатеральная фильтрация изображений
+            if (args.Length == 5 && args[2] == "bilateral")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+
+                image = Bilateral.Process(image, double.Parse(args[3]), double.Parse(args[3]));
                 ImageIO.ImageToFile(image, outputFileName);
             }
 
