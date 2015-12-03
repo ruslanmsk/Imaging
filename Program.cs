@@ -3,6 +3,7 @@ using System.Drawing;
 using System.IO;
 using ImageReadCS.task1;
 using ImageReadCS.task2;
+using ImageReadCS.task3;
 
 namespace ImageReadCS
 {
@@ -10,9 +11,10 @@ namespace ImageReadCS
     {
         static void Main()
         {
-            var readLine = Console.ReadLine();
-            if (readLine == null) return;
-            var args = readLine.Split(' ');
+            //var readLine = Console.ReadLine();
+            //if (readLine == null) return;
+            //var args = readLine.Split(' ');
+            var args = new[] {"cameraman.bmp", "cameraman5.bmp", "harris", "2"};
             //task1
             //Инверсия значений пикселей изображения
             if (args.Length == 3 && args[2] == "invert")
@@ -207,7 +209,29 @@ namespace ImageReadCS
                         break;
                 }
             }
+            //task3
+            //Алгоритм детектирования границ Канни
+            if (args.Length == 6 && args[2] == "canny")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
 
+                image = Canny.Process(image, Convert.ToSingle(args[3]), Convert.ToSingle(args[4]), Convert.ToSingle(args[5]));
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //Алгоритм Харриса для детектирования углов
+            if (args.Length == 4 && args[2] == "harris")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+
+                image = Harris.Process(image, Convert.ToDouble(args[3]));
+                ImageIO.ImageToFile(image, outputFileName);
+            }
 
         }
     }
