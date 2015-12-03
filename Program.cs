@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
 using ImageReadCS.task1;
 using ImageReadCS.task2;
@@ -34,7 +35,7 @@ namespace ImageReadCS
                 if (args[3] == "y") Reflection.FlipVertical(image);
                 ImageIO.ImageToFile(image, outputFileName);
             }
-            //Поворот изображений по и против часовой стрелки на 90, 180 и 270 градусов
+            //Поворот изображений по и против часовой стрелки на 90, 180 и 270 градусов(на произвольный угол)
             if (args.Length == 5 && args[2] == "rotate")
             {
                 string inputFileName = args[0], outputFileName = args[1];
@@ -74,8 +75,8 @@ namespace ImageReadCS
                 if (!File.Exists(inputFileName))
                     return;
                 var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
-                if (args[3] == "1") image = MedianFiltering.Convolution(image, Filters.RobertsMainDiag(), 2, 2);
-                if (args[3] == "2") image = MedianFiltering.Convolution(image, Filters.RobertsAdditionalDiag(), 2, 2);
+                if (args[3] == "1") image = MedianFiltering.Convolution(image, Filters.RobertsMainDiagonal(), 2, 2);
+                if (args[3] == "2") image = MedianFiltering.Convolution(image, Filters.RobertsAdditionalDiagonal(), 2, 2);
                 ImageIO.ImageToFile(image, outputFileName);
             }
             //Медианная фильтрация с квадратным окном произвольного размера
@@ -106,6 +107,36 @@ namespace ImageReadCS
                 {
                     image.rawdata[i] = Convert.ToSingle(data[i]);
                 }
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //Вычисление модуля градиента как корень из суммы квадратов свёрток с первой производной фильтра Гаусса по горизонтали и вертикали
+            if (args.Length == 4 && args[2] == "gradient")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                ConvolutionGauss.GradientProcess(image.rawdata, image.Width, image.Height, double.Parse(args[3]), (int)(double.Parse(args[3]) * 6), image.rawdata);
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //Фильтр Габора с произвольными параметрами
+            if (args.Length == 8 && args[2] == "gabor")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                image = ConvolutionGauss.Gabor(image, Filters.Gabor((int)(6 * double.Parse(args[3])), double.Parse(args[3]), double.Parse(args[6]), double.Parse(args[5]), double.Parse(args[4]), double.Parse(args[6])), (int)(6 * double.Parse(args[3])), (int)(6 * double.Parse(args[3])), int.Parse(args[7]));
+                ImageIO.ImageToFile(image, outputFileName);
+            }
+            //Обнаружение сосудов на изображениях глазного дна с помощью фильтров Габора
+            if (args.Length == 4 && args[2] == "vessels")
+            {
+                string inputFileName = args[0], outputFileName = args[1];
+                if (!File.Exists(inputFileName))
+                    return;
+                var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
+                image = ConvolutionGauss.Vessels(image, (int)(6 * Convert.ToDouble(args[3])), Convert.ToDouble(args[3]));
                 ImageIO.ImageToFile(image, outputFileName);
             }
             //task2
@@ -177,7 +208,7 @@ namespace ImageReadCS
                 }
             }
 
-            
+
         }
     }
 }
