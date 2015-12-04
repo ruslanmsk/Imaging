@@ -13,7 +13,7 @@ namespace ImageReadCS
             //var readLine = Console.ReadLine();
             //if (readLine == null) return;
             //var args = readLine.Split(' ');
-            var args = new[] {"baboon.bmp", "test2.bmp", "bilateral", "2", "7"};
+            var args = new[] {"lena.bmp", "test2.bmp", "canny", "2", "40", "120"};
             //task1
             //Инверсия значений пикселей изображения
             if (args.Length == 3 && args[2] == "invert")
