@@ -8,12 +8,13 @@ namespace ImageReadCS
 {
     class Program
     {
-        static void Main()
+        static void Main(/*string[] args*/)
         {
             //var readLine = Console.ReadLine();
             //if (readLine == null) return;
             //var args = readLine.Split(' ');
-            var args = new[] {"baboon.bmp", "test2.bmp", "bilateral", "2", "7"};
+            var args = new[] { "cameraman.bmp", "cameraman2.bmp", "harris", "2"};
+
             //task1
             //Инверсия значений пикселей изображения
             if (args.Length == 3 && args[2] == "invert")

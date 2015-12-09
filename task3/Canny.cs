@@ -1,5 +1,4 @@
 ﻿using System;
-using ImageReadCS.task1;
 
 namespace ImageReadCS.task3
 {
@@ -9,7 +8,6 @@ namespace ImageReadCS.task3
         public GrayscaleFloatImage image;
         public int[,] GreyImage;
         public float[,] GreyImage2;
-        //Gaussian Kernel Data
         int[,] GaussianKernel;
         int KernelWeight;
         int KernelSize = 5;
@@ -28,7 +26,62 @@ namespace ImageReadCS.task3
         public int[,] EdgeMap;
         public int[,] VisitedMap;
 
-        public  static GrayscaleFloatImage Process(GrayscaleFloatImage image, float SigmaforGaussianKernel, float Th, float Tl )
+        //new gradient
+        public static GrayscaleFloatImage Grad(GrayscaleFloatImage image, int r, float sig)
+        {
+            var image_x = new GrayscaleFloatImage(image.Width, image.Height);
+            var image_y = new GrayscaleFloatImage(image.Width, image.Height);
+            var image_grad = new GrayscaleFloatImage(image.Width, image.Height);
+
+            for (int y = 0; y < image.Height; y++)
+                for (int x = 0; x < image.Width; x++)
+                    image_x[x, y] = image_y[x, y] = 0;
+
+            float s = 0, koef = 1 / (float)Math.Sqrt(2 * Math.PI * sig * sig);
+            for (int j = -r; j <= r; j++)
+                for (int i = -r; i <= r; i++)
+                    s += Math.Abs((float)(koef * (-2) * i / (sig * sig) * Math.Exp(-((i * i + j * j) / (sig * sig)))));
+
+            for (int y = 0; y < image.Height; y++)
+                for (int x = 0; x < image.Width; x++)
+                {
+                    for (int j = -r; j <= r; j++)
+                        for (int i = -r; i <= r; i++)
+                        {
+                            image_x[x, y] += (float)(koef * (-2) * i / (sig * sig) * Math.Exp(-((i * i + j * j) / (sig * sig)))) * image[x + i < 0 ? 0 : x + i >= image.Width ? image.Width - 1 : x + i, y + j < 0 ? 0 : y + j >= image.Height ? image.Height - 1 : y + j];
+                        }
+                    image_x[x, y] = image_x[x, y] / s;
+                }
+            //nonmax
+            for (int y = 0; y < image.Height; y++)
+                for (int x = 0; x < image.Width; x++)
+                {
+                    for (int j = -r; j <= r; j++)
+                        for (int i = -r; i <= r; i++)
+                        {
+                            image_y[x, y] += (float)(koef * (-2) * j / (sig * sig) * Math.Exp(-((i * i + j * j) / (sig * sig)))) * image[x + i < 0 ? 0 : x + i >= image.Width ? image.Width - 1 : x + i, y + j < 0 ? 0 : y + j >= image.Height ? image.Height - 1 : y + j];
+                        }
+                    image_y[x, y] = image_y[x, y] / s;
+                }
+
+            for (int x = 0; x < image.Width; x++)
+                for (int y = 0; y < image.Height; y++)
+                    image_grad[x, y] = (float)Math.Sqrt(image_y[x, y] * image_y[x, y] + image_x[x, y] * image_x[x, y]);
+            for (int i = 1; i < image.Width - 1; i++)
+                for (int j = 1; j < image.Height - 1; j++)
+                {
+                    double th = Math.Round(Math.Atan2(image_x[i, j], image_y[i, j]) / (Math.PI / 4)) * (Math.PI / 4) - (Math.PI / 2);
+                    int di = Math.Sign(Math.Cos(th));
+                    int dj = -Math.Sign(Math.Sin(th));
+                    if (image_grad[i + di, j + dj] <= image_grad[i, j])
+                        image_grad[i + di, j + dj] = 0;
+                    if (image_grad[i - di, j - dj] <= image_grad[i, j])
+                        image_grad[i - di, j - dj] = 0;
+                }
+            return image_grad;
+        }
+
+        public static GrayscaleFloatImage Process(GrayscaleFloatImage image, float SigmaforGaussianKernel, float Th, float Tl)
         {
             var canny = new Canny(image, SigmaforGaussianKernel, Th, Tl);
             for (var i = 0; i < canny.Height; i++)
@@ -48,7 +101,6 @@ namespace ImageReadCS.task3
             // Gaussian and Canny Parameters
             MaxHysteresisThresh = Th;
             MinHysteresisThresh = Tl;
-            //KernelSize = GaussianMaskSize;
             Sigma = SigmaforGaussianKernel;
             this.image = image;
             Width = image.Width;
@@ -57,7 +109,7 @@ namespace ImageReadCS.task3
             EdgeMap = new int[Width, Height];
             VisitedMap = new int[Width, Height];
 
-            GreyImage2 = new float[Width,Height];
+            GreyImage2 = new float[Width, Height];
             for (var i = 0; i < Height; i++)
             {
                 for (var j = 0; j < Width; j++)
@@ -141,7 +193,7 @@ namespace ImageReadCS.task3
         {
             GenerateGaussianKernel(KernelSize, Sigma, out KernelWeight);
 
-            var  Output = new float[Width, Height];
+            var Output = new float[Width, Height];
             int i, j, k, l;
             int Limit = KernelSize / 2;
 
@@ -238,7 +290,7 @@ namespace ImageReadCS.task3
             //}
             ////end test
             FilteredImage = GaussianFilter(GreyImage2);
-            
+
             //Sobel Masks
             int[,] Dx = {{1,0,-1},
                          {1,0,-1},
@@ -267,63 +319,23 @@ namespace ImageReadCS.task3
             // Perform Non maximum suppression:
             // NonMax = Gradient;
 
-            for (i = 0; i <= (Width - 1); i++)
-            {
-                for (j = 0; j <= (Height - 1); j++)
-                {
-                    NonMax[i, j] = Gradient[i, j];
-                }
-            }
+
 
             int Limit = KernelSize / 2;
             int r, c;
             float Tangent;
 
+            var ima = image;
+            ima = Grad(ima, (int)Sigma * 3, Sigma);
 
-            for (i = Limit; i <= (Width - Limit) - 1; i++)
+
+            for (int y = 0; y < ima.Height; y++)
             {
-                for (j = Limit; j <= (Height - Limit) - 1; j++)
+                for (int x = 0; x < ima.Width; x++)
                 {
-
-                    if (DerivativeX[i, j] == 0)
-                        Tangent = 90F;
-                    else
-                        Tangent = (float)(Math.Atan(DerivativeY[i, j] / DerivativeX[i, j]) * 180 / Math.PI); //rad to degree
-
-
-
-                    //Horizontal Edge
-                    if (((-22.5 < Tangent) && (Tangent <= 22.5)) || ((157.5 < Tangent) && (Tangent <= -157.5)))
-                    {
-                        if ((Gradient[i, j] < Gradient[i, j + 1]) || (Gradient[i, j] < Gradient[i, j - 1]))
-                            NonMax[i, j] = 0;
-                    }
-
-
-                    //Vertical Edge
-                    if (((-112.5 < Tangent) && (Tangent <= -67.5)) || ((67.5 < Tangent) && (Tangent <= 112.5)))
-                    {
-                        if ((Gradient[i, j] < Gradient[i + 1, j]) || (Gradient[i, j] < Gradient[i - 1, j]))
-                            NonMax[i, j] = 0;
-                    }
-
-                    //+45 Degree Edge
-                    if (((-67.5 < Tangent) && (Tangent <= -22.5)) || ((112.5 < Tangent) && (Tangent <= 157.5)))
-                    {
-                        if ((Gradient[i, j] < Gradient[i + 1, j - 1]) || (Gradient[i, j] < Gradient[i - 1, j + 1]))
-                            NonMax[i, j] = 0;
-                    }
-
-                    //-45 Degree Edge
-                    if (((-157.5 < Tangent) && (Tangent <= -112.5)) || ((67.5 < Tangent) && (Tangent <= 22.5)))
-                    {
-                        if ((Gradient[i, j] < Gradient[i + 1, j + 1]) || (Gradient[i, j] < Gradient[i - 1, j - 1]))
-                            NonMax[i, j] = 0;
-                    }
-
+                    NonMax[x, y] = ima[x, y];
                 }
             }
-
 
             //PostHysteresis = NonMax;
             for (r = Limit; r <= (Width - Limit) - 1; r++)
