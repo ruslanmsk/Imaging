@@ -40,7 +40,7 @@ namespace ImageReadCS.task3
             float s = 0, koef = 1 / (float)Math.Sqrt(2 * Math.PI * sig * sig);
             for (int j = -r; j <= r; j++)
                 for (int i = -r; i <= r; i++)
-                    s += Math.Abs((float)(koef * (-2) * i / (sig * sig) * Math.Exp(-((i * i + j * j) / (sig * sig)))));
+                    s += Math.Abs((float)(koef * (-2) * i / (sig * sig) * Math.Exp(-((i * i + j * j) / ( 2 *sig * sig)))));//add 2
 
             for (int y = 0; y < image.Height; y++)
                 for (int x = 0; x < image.Width; x++)
