@@ -1,4 +1,6 @@
-﻿namespace ImageReadCS.task3
+﻿using System;
+
+namespace ImageReadCS.task3
 {
 
     public class Harris
@@ -27,11 +29,11 @@
 
         protected int GaussianKernelWindowSize = 5;
         protected static double[] GaussianKernel = new double[25] {
-            ((double)1 / (double)84), ((double)2 / (double)84), ((double)3 / (double)84), ((double)2 / (double)84), ((double)1 / (double)84),
-            ((double)2 / (double)84), ((double)5 / (double)84), ((double)6 / (double)84), ((double)5 / (double)84), ((double)2 / (double)84),
-            ((double)3 / (double)84), ((double)6 / (double)84), ((double)8 / (double)84), ((double)6 / (double)84), ((double)3 / (double)84),
-            ((double)2 / (double)84), ((double)5 / (double)84), ((double)6 / (double)84), ((double)5 / (double)84), ((double)2 / (double)84),
-            ((double)1 / (double)84), ((double)2 / (double)84), ((double)3 / (double)84), ((double)2 / (double)84), ((double)1 / (double)84)
+            (1 / (double)84), (2 / (double)84), (3 / (double)84), (2 / (double)84), (1 / (double)84),
+            ((double)2 / 84), (5 / (double)84), (6 / (double)84), (5 / (double)84), (2 / (double)84),
+            (3 / (double)84), (6 / (double)84), (8 / (double)84), (6 / (double)84), (3 / (double)84),
+            (2 / (double)84), (5 / (double)84), (6 / (double)84), (5 / (double)84), (2 / (double)84),
+            (1 / (double)84), (2 / (double)84), (3 / (double)84), (2 / (double)84), (1 / (double)84)
         };
 
         public Harris(GrayscaleFloatImage image, double sigma)
@@ -58,7 +60,7 @@
             BuildGradient();            //compute image grayscale gradient
             BuildOrder2MomentMatrix();  //compute order 2 moment matrix;
             BuildHarrisResponse();      //compute harris reponse for Corners
-            ApplyNONMaxSupression();    //apply non-maximum supression algorithm to eliminate the weak Corners
+            ApplyNonMaxSupression();    //apply non-maximum supression algorithm to eliminate the weak Corners
             var result = WriteResultImage(image);
 
             return result;
@@ -97,27 +99,26 @@
         {
             for (var i = 0; i < Width * Height; i++)
             {
-                Corners[i] = (int)((double)(Mx[i] * My[i]) - (Mxy[i] * Mxy[i]) - (double)K * ((double)(Mx[i] + My[i]) * (Mx[i] + My[i])));
+                Corners[i] = (int)((double)(Mx[i] * My[i]) - (Mxy[i] * Mxy[i]) - K * ((double)(Mx[i] + My[i]) * (Mx[i] + My[i])));
 
                 //apply the treshold to diferentiate Corners pixels from edge pixels or from flat regions pixels
                 if (Corners[i] < CornerTreshold)
                 {
                     Corners[i] = 0;
-
                 }
 
             }
         }
 
-        private static void ApplyNONMaxSupression()
+        private static void ApplyNonMaxSupression()
         {
             for (var i = (NmSupressWindowSize / 2 + 1) * Width + (NmSupressWindowSize / 2);
                 i < (Height * Width) - (NmSupressWindowSize / 2 + 1) * Width - (NmSupressWindowSize / 2);
                 i++)
             {
-                var line_coord = i % Width;
-                if (line_coord <= Width - (NmSupressWindowSize / 2 + 1) &&
-                    line_coord >= (NmSupressWindowSize / 2 + 1))
+                var lineCoord = i % Width;
+                if (lineCoord <= Width - (NmSupressWindowSize / 2 + 1) &&
+                    lineCoord >= (NmSupressWindowSize / 2 + 1))
                 {
 
                     if (Corners[i] != 0)
@@ -158,15 +159,16 @@
             return image;
         }
 
-        protected static int MSpatialConvolution(float[] data1, float[] data2, int k, double[] kernel_filter, int kernelSize)
+        protected static int MSpatialConvolution(float[] Data1, float[] Data2, int k, double[] KernelFilter, int KernelSize)
         {
+            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k));
             var output = 0;
             var l = 0;
-            for (var i = -(kernelSize / 2); i <= (kernelSize / 2); i++)
+            for (var i = -(KernelSize / 2); i <= (KernelSize / 2); i++)
             {
-                for (var j = -(kernelSize / 2); j <= (kernelSize / 2); j++)
+                for (var j = -(KernelSize / 2); j <= (KernelSize / 2); j++)
                 {
-                    output += (int)(data1[k + i * Width + j] * data2[k + i * Width + j] * kernel_filter[l]);
+                    output += (int)(Data1[k + i * Width + j] * Data2[k + i * Width + j] * KernelFilter[l]);
                     l++;
                 }
             }
@@ -175,15 +177,16 @@
 
         }
 
-        protected static float GradSpatialConvolution(float[] data, int k, int[] kernel_filter, int kernelSize)
+        protected static float GradSpatialConvolution(float[] Data, int k, int[] KernelFilter, int KernelSize)
         {
+            if (k <= 0) throw new ArgumentOutOfRangeException(nameof(k));
             float output = 0;
             var l = 0;
-            for (var i = -(kernelSize / 2); i <= (kernelSize / 2); i++)
+            for (var i = -(KernelSize / 2); i <= (KernelSize / 2); i++)
             {
-                for (var j = -(kernelSize / 2); j <= (kernelSize / 2); j++)
+                for (var j = -(KernelSize / 2); j <= (KernelSize / 2); j++)
                 {
-                    output += data[k + i * Width + j] * kernel_filter[l];
+                    output += Data[k + i * Width + j] * KernelFilter[l];
                     l++;
                 }
             }
