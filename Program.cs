@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Linq;
 using ImageReadCS.task1;
 using ImageReadCS.task2;
 using ImageReadCS.task3;
@@ -13,7 +16,7 @@ namespace ImageReadCS
             //var readLine = Console.ReadLine();
             //if (readLine == null) return;
             //var args = readLine.Split(' ');
-            var args = new[] { "cameraman.bmp", "cameraman3.bmp", "canny", "3", "0,7", "0,5" };
+            var args = new[] { "house2.bmp", "house3.bmp", "canny", "2", "0,3", "0,05" };
 
             //task1
             //Инверсия значений пикселей изображения
@@ -218,8 +221,8 @@ namespace ImageReadCS
                     return;
                 var image = ImageIO.FileToGrayscaleFloatImage(inputFileName);
 
-                image = Canny.Process(image, Convert.ToSingle(args[3]), Convert.ToSingle(args[4]), Convert.ToSingle(args[5]));
-                ImageIO.ImageToFile(image, outputFileName);
+                var image2 = Canny.Process(image, Convert.ToSingle(args[3]), Convert.ToSingle(args[4]), Convert.ToSingle(args[5]));
+                ImageIO.ImageToFile(image2, outputFileName);
             }
             //Алгоритм Харриса для детектирования углов
             if (args.Length == 4 && args[2] == "harris")
@@ -245,5 +248,6 @@ namespace ImageReadCS
             }
 
         }
+ 
     }
 }
