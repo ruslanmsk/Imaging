@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
-using System.Linq;
 using ImageReadCS.task1;
 using ImageReadCS.task2;
 using ImageReadCS.task3;
@@ -11,12 +8,12 @@ namespace ImageReadCS
 {
     class Program
     {
-        static void Main(/*string[] args*/)
+        static void Main(string[] args)
         {
             //var readLine = Console.ReadLine();
             //if (readLine == null) return;
             //var args = readLine.Split(' ');
-            var args = new[] { "house2.bmp", "house3.bmp", "canny", "2", "0,3", "0,05" };
+            //var args = new[] { "house2.bmp", "house222.bmp", "canny", "1", "0,25", "0,1" };
 
             //task1
             //Инверсия значений пикселей изображения

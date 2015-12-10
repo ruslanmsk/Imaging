@@ -1,27 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 
 namespace ImageReadCS.task3
 {
     class Canny
     {
-        public static GrayscaleFloatImage ImageX, ImageY, ImageGrad, Image2Grad;
+        public static GrayscaleFloatImage ImageX, ImageY, ImageGrad, ImageGrad2;
 
-        public int Width, Height;
+        private int Width;
+        public int Height;
         public GrayscaleFloatImage Image;
         public float Sigma = 1;
         //Canny Edge Detection Parameters
         public float MaxHysteresisThresh, MinHysteresisThresh;
-        public int[] dx = { 1, 0, -1, 0, 1, 1, -1, -1 };
-        public int[] dy = { 0, 1, 0, -1, 1, -1, 1, -1 };
+        public int[] Dx = { 1, 0, -1, 0, 1, 1, -1, -1 };
+        public int[] Dy = { 0, 1, 0, -1, 1, -1, 1, -1 };
 
         private static void NewGradient(GrayscaleFloatImage image, int r, float sig)
         {
-            ImageX = new GrayscaleFloatImage(image.Width, image.Height);
-            ImageY = new GrayscaleFloatImage(image.Width, image.Height);
-            ImageGrad = new GrayscaleFloatImage(image.Width, image.Height);
+            
 
             for (var y = 0; y < image.Height; y++)
                 for (var x = 0; x < image.Width; x++)
@@ -29,14 +27,14 @@ namespace ImageReadCS.task3
             float s = 0, koef = 1 / (float)Math.Sqrt(2 * Math.PI * sig * sig);
             for (var j = -r; j <= r; j++)
                 for (var i = -r; i <= r; i++)
-                    s += Math.Abs((float)(koef * (-2) * i / (sig * sig) * Math.Exp(-((i * i + j * j) / (sig * sig)))));
+                    s += Math.Abs((float)(koef * (-2) * i / (sig * sig) * Math.Exp(-((i * i + j * j) / (2*sig * sig)))));
             for (var y = 0; y < image.Height; y++)
                 for (var x = 0; x < image.Width; x++)
                 {
                     for (var j = -r; j <= r; j++)
                         for (var i = -r; i <= r; i++)
                         {
-                            ImageX[x, y] += (float)(koef * (-2) * i / (sig * sig) * Math.Exp(-((i * i + j * j) / (sig * sig)))) * image[x + i < 0 ? 0 : x + i >= image.Width ? image.Width - 1 : x + i, y + j < 0 ? 0 : y + j >= image.Height ? image.Height - 1 : y + j];
+                            ImageX[x, y] += (float)(koef * (-2) * i / (sig * sig) * Math.Exp(-((i * i + j * j) / (2*sig * sig)))) * image[x + i < 0 ? 0 : x + i >= image.Width ? image.Width - 1 : x + i, y + j < 0 ? 0 : y + j >= image.Height ? image.Height - 1 : y + j];
                         }
                     ImageX[x, y] = ImageX[x, y] / s;
                 }
@@ -46,7 +44,7 @@ namespace ImageReadCS.task3
                     for (var j = -r; j <= r; j++)
                         for (var i = -r; i <= r; i++)
                         {
-                            ImageY[x, y] += (float)(koef * (-2) * j / (sig * sig) * Math.Exp(-((i * i + j * j) / (sig * sig)))) * image[x + i < 0 ? 0 : x + i >= image.Width ? image.Width - 1 : x + i, y + j < 0 ? 0 : y + j >= image.Height ? image.Height - 1 : y + j];
+                            ImageY[x, y] += (float)(koef * (-2) * j / (sig * sig) * Math.Exp(-((i * i + j * j) / (2*sig * sig)))) * image[x + i < 0 ? 0 : x + i >= image.Width ? image.Width - 1 : x + i, y + j < 0 ? 0 : y + j >= image.Height ? image.Height - 1 : y + j];
                         }
                     ImageY[x, y] = ImageY[x, y] / s;
                 }
@@ -58,10 +56,14 @@ namespace ImageReadCS.task3
         public Canny(GrayscaleFloatImage image, float sigma, float th, float tl)
         {
             Image = image;
+            ImageX = new GrayscaleFloatImage(image.Width, image.Height);
+            ImageY = new GrayscaleFloatImage(image.Width, image.Height);
+            ImageGrad = new GrayscaleFloatImage(image.Width, image.Height);
             MaxHysteresisThresh = th;
             MinHysteresisThresh = tl;
-            NewGradient(Image, (int)(3 * sigma), sigma);
-            Image2Grad = new GrayscaleFloatImage(ImageGrad.Width, ImageGrad.Height);
+            Sigma = sigma;
+            NewGradient(Image, (int)(3 * Sigma), Sigma);
+            ImageGrad2 = new GrayscaleFloatImage(ImageGrad.Width, ImageGrad.Height);
             for (var i = 1; i < Image.Width - 1; i++)
                 for (var j = 1; j < Image.Height - 1; j++)
                 {
@@ -70,46 +72,44 @@ namespace ImageReadCS.task3
                     var hj = -Math.Sign(Math.Sin(tang));
                     if (ImageGrad[i, j] < ImageGrad[i + hi, j + hj] || ImageGrad[i, j] < ImageGrad[i - hi, j - hj])
                     {
-                        Image2Grad[i, j] = 0;
+                        ImageGrad2[i, j] = 0;
                     }
-                    else Image2Grad[i, j] = ImageGrad[i, j];
+                    else ImageGrad2[i, j] = ImageGrad[i, j];
 
                 }
-            ImageGrad = Image2Grad;
+            ImageGrad = ImageGrad2;
             var max = ImageGrad.rawdata.Max();
             MinHysteresisThresh = max * MinHysteresisThresh;
             MaxHysteresisThresh = max * MaxHysteresisThresh;
 
-            var stX = new Stack<int>();
-            var stY = new Stack<int>();
+            var stackX = new Stack<int>();
+            var stackY = new Stack<int>();
 
             for (var i = 0; i < Image.Width; i++)
                 for (var j = 0; j < Image.Height; j++)
                     if (ImageGrad[i, j] > MaxHysteresisThresh)
                     {
                         ImageGrad[i, j] = 255;
-                        stX.Push(i);
-                        stY.Push(j);
+                        stackX.Push(i);
+                        stackY.Push(j);
                     }
                     else
                         if (ImageGrad[i, j] > MinHysteresisThresh) ImageGrad[i, j] = 128;
                     else ImageGrad[i, j] = 0;
 
-            while (stX.Count != 0)
+            while (stackX.Count != 0)
             {
-                var x = stX.Pop();
-                var y = stY.Pop();
+                var x = stackX.Pop();
+                var y = stackY.Pop();
                 for (var i = 0; i < 8; i++)
                 {
-                    var nx = x + dx[i];
-                    var ny = y + dy[i];
+                    var nx = x + Dx[i];
+                    var ny = y + Dy[i];
                     if ((nx < 0) || (ny < 0) || (nx >= Image.Width) || (ny >= Image.Height)) continue;
-                    if (ImageGrad[nx, ny] == 128)
-                    {
-                        ImageGrad[nx, ny] = 255;
-                        stX.Push(nx);
-                        stY.Push(ny);
-                    }
+                    if (ImageGrad[nx, ny] != 128) continue;
+                    ImageGrad[nx, ny] = 255;
+                    stackX.Push(nx);
+                    stackY.Push(ny);
                 }
             }
 
